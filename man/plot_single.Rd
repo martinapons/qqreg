@@ -4,7 +4,7 @@
 \alias{plot_single}
 \title{Internal: Plot Single Coefficient}
 \usage{
-plot_single(x, which, type, taus_slice, ncol, ylim, ...)
+plot_single(x, which, type, taus_slice, ncol, shared_ylim, ylim, ...)
 }
 \description{
 Internal: Plot Single Coefficient

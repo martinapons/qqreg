@@ -9,7 +9,8 @@
   which = NULL,
   type = c("surface", "slice_u", "slice_v"),
   taus_slice = seq(0.1, 0.9, 0.1),
-  ncol = 3,
+  ncol = NULL,
+  shared_ylim = FALSE,
   ylim = NULL,
   ...
 )
@@ -32,7 +33,14 @@ first non-intercept coefficient.}
 Default is \code{seq(0.1, 0.9, 0.1)}. Must be a subset of the model's
 quantile grid.}
 
-\item{ncol}{Integer, number of columns for slice plot panels (default 3).}
+\item{ncol}{Integer, number of columns for slice plot panels. If NULL (default),
+automatically selects: 1 slice uses 1 column, 2/4/8 slices use 2 columns,
+3/6/9 or more slices use 3 columns.}
+
+\item{shared_ylim}{Logical, whether all slices should share the same y-axis
+scale (default FALSE). If TRUE, a global y-axis range is computed across
+all slices and only the first column displays y-axis labels. If FALSE,
+each slice has its own y-axis scale and all y-axis labels are displayed.}
 
 \item{ylim}{Numeric vector of length 2, y-axis limits for slice plots.}
 

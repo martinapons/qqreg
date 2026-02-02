@@ -8,6 +8,10 @@
 #' @param data A data frame containing the variables in the formula.
 #' @param group A character string naming the grouping variable in \code{data}.
 #' @param taus Numeric vector of quantile levels, default \code{seq(0.1, 0.9, 0.1)}.
+#' @param n_small Numeric, minimum group size (default NULL). Groups with fewer
+#'   than \code{n_small} observations will be dropped with a message. If any group
+#'   has fewer observations than the number of covariates, the function will stop
+#'   with an error.
 #' @param bootstrap Logical, whether to compute bootstrap standard errors (default TRUE).
 #' @param nboot Number of bootstrap replications (default 1000).
 #' @param parallel Logical, whether to parallelize computation (default TRUE).
@@ -96,6 +100,7 @@
 #' @export
 qq_fit <- function(formula, data, group,
                    taus = seq(0.1, 0.9, by = 0.1),
+                   n_small = NULL,
                    bootstrap = TRUE, nboot = 1000,
                    parallel = TRUE, parallel_first = TRUE,
                    ncores = NULL, weights = NULL) {
@@ -128,6 +133,53 @@ qq_fit <- function(formula, data, group,
   # Sort data by group
   data <- data[order(data[[group]]), ]
   group_vec <- data[[group]]
+
+  # Compute group sizes
+  group_sizes <- table(group_vec)
+
+  # Count covariates (need this for critical check)
+  # Use a small subset to avoid memory issues
+  X_temp <- stats::model.matrix(formula, data[seq_len(min(100, nrow(data))), , drop = FALSE])
+  n_covariates <- ncol(X_temp)
+
+  # CRITICAL CHECK: Groups smaller than number of covariates
+  small_groups_idx <- which(group_sizes < n_covariates)
+  if (length(small_groups_idx) > 0) {
+    groups <- as.numeric(names(group_sizes))
+    small_group_vals <- groups[small_groups_idx]
+
+    message(sprintf("ERROR: %d group(s) have fewer observations than covariates (%d):",
+                    length(small_groups_idx), n_covariates))
+    message(paste("  Groups:", paste(small_group_vals, collapse = ", ")))
+    message(sprintf("Either remove these groups or use n_small >= %d to drop them.", n_covariates))
+    stop("Cannot estimate: groups with fewer observations than covariates")
+  }
+
+  # Drop small groups if n_small specified
+  if (!is.null(n_small)) {
+    if (!is.numeric(n_small) || n_small < 1) {
+      stop("'n_small' must be a positive number")
+    }
+
+    drop_idx <- which(group_sizes < n_small)
+
+    if (length(drop_idx) > 0) {
+      groups <- as.numeric(names(group_sizes))
+      drop_group_vals <- groups[drop_idx]
+
+      # Keep observations NOT in dropped groups
+      keep_mask <- !(group_vec %in% drop_group_vals)
+      data <- data[keep_mask, ]
+      group_vec <- group_vec[keep_mask]
+
+      # Message
+      message(sprintf("Dropped %d group(s) with fewer than %d observations:",
+                      length(drop_idx), n_small))
+      message(paste("  Groups:", paste(drop_group_vals, collapse = ", ")))
+      message(sprintf("Remaining: %d groups, %d observations",
+                      length(unique(group_vec)), nrow(data)))
+    }
+  }
 
   # Extract model components
   mf <- stats::model.frame(formula, data, na.action = na.pass)

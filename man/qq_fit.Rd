@@ -9,6 +9,7 @@ qq_fit(
   data,
   group,
   taus = seq(0.1, 0.9, by = 0.1),
+  n_small = NULL,
   bootstrap = TRUE,
   nboot = 1000,
   parallel = TRUE,
@@ -25,6 +26,11 @@ qq_fit(
 \item{group}{A character string naming the grouping variable in \code{data}.}
 
 \item{taus}{Numeric vector of quantile levels, default \code{seq(0.1, 0.9, 0.1)}.}
+
+\item{n_small}{Numeric, minimum group size (default NULL). Groups with fewer
+than \code{n_small} observations will be dropped with a message. If any group
+has fewer observations than the number of covariates, the function will stop
+with an error.}
 
 \item{bootstrap}{Logical, whether to compute bootstrap standard errors (default TRUE).}
 

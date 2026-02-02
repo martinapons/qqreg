@@ -15,7 +15,13 @@
 #' @param taus_slice Numeric vector, quantiles to use for slice plots.
 #'   Default is \code{seq(0.1, 0.9, 0.1)}. Must be a subset of the model's
 #'   quantile grid.
-#' @param ncol Integer, number of columns for slice plot panels (default 3).
+#' @param ncol Integer, number of columns for slice plot panels. If NULL (default),
+#'   automatically selects: 1 slice uses 1 column, 2/4/8 slices use 2 columns,
+#'   3/6/9 or more slices use 3 columns.
+#' @param shared_ylim Logical, whether all slices should share the same y-axis
+#'   scale (default FALSE). If TRUE, a global y-axis range is computed across
+#'   all slices and only the first column displays y-axis labels. If FALSE,
+#'   each slice has its own y-axis scale and all y-axis labels are displayed.
 #' @param ylim Numeric vector of length 2, y-axis limits for slice plots.
 #' @param ... Additional arguments passed to underlying plot functions.
 #'
@@ -42,8 +48,8 @@
 #'
 #' @export
 plot.qqfit <- function(x, which = NULL, type = c("surface", "slice_u", "slice_v"),
-                        taus_slice = seq(0.1, 0.9, 0.1), ncol = 3,
-                        ylim = NULL, ...) {
+                        taus_slice = seq(0.1, 0.9, 0.1), ncol = NULL,
+                        shared_ylim = FALSE, ylim = NULL, ...) {
 
   # Check for ggplot2
 
@@ -52,6 +58,23 @@ if (!requireNamespace("ggplot2", quietly = TRUE)) {
   }
 
   type <- match.arg(type)
+
+  # Automatic ncol selection for slice plots
+  if (is.null(ncol)) {
+    if (type %in% c("slice_u", "slice_v")) {
+      n_slices <- length(taus_slice)
+      # 1 column for 1 slice, 2 columns for 2/4/8 slices, 3 columns for 3/6/9+ slices
+      if (n_slices == 1) {
+        ncol <- 1
+      } else if (n_slices %in% c(2, 4, 8)) {
+        ncol <- 2
+      } else {
+        ncol <- 3
+      }
+    } else {
+      ncol <- 3  # Default for surface plots (not used but safe)
+    }
+  }
 
   # Get coefficient names
   coef_names <- dimnames(x$coef)[[1]]
@@ -73,7 +96,7 @@ if (!requireNamespace("ggplot2", quietly = TRUE)) {
   if (identical(which, "ALL")) {
     plots <- lapply(coef_names, function(w) {
       plot_single(x, which = w, type = type, taus_slice = taus_slice,
-                  ncol = ncol, ylim = ylim, ...)
+                  ncol = ncol, shared_ylim = shared_ylim, ylim = ylim, ...)
     })
     names(plots) <- coef_names
     return(plots)
@@ -86,14 +109,14 @@ if (!requireNamespace("ggplot2", quietly = TRUE)) {
   }
 
   plot_single(x, which = which, type = type, taus_slice = taus_slice,
-              ncol = ncol, ylim = ylim, ...)
+              ncol = ncol, shared_ylim = shared_ylim, ylim = ylim, ...)
 }
 
 
 #' Internal: Plot Single Coefficient
 #'
 #' @keywords internal
-plot_single <- function(x, which, type, taus_slice, ncol, ylim, ...) {
+plot_single <- function(x, which, type, taus_slice, ncol, shared_ylim, ylim, ...) {
 
   # Extract coefficient matrix and SE matrix for this variable
   coef_idx <- which(dimnames(x$coef)[[1]] == which)
@@ -103,8 +126,8 @@ plot_single <- function(x, which, type, taus_slice, ncol, ylim, ...) {
 
   switch(type,
     "surface" = plot_surface(coefs, se, taus, which, ...),
-    "slice_u" = plot_slices_u(coefs, se, taus, taus_slice, which, ncol, ylim, ...),
-    "slice_v" = plot_slices_v(coefs, se, taus, taus_slice, which, ncol, ylim, ...)
+    "slice_u" = plot_slices_u(coefs, se, taus, taus_slice, which, ncol, shared_ylim, ylim, ...),
+    "slice_v" = plot_slices_v(coefs, se, taus, taus_slice, which, ncol, shared_ylim, ylim, ...)
   )
 }
 
@@ -149,10 +172,50 @@ plot_surface <- function(coefs, se, taus, coef_name, ...) {
 }
 
 
+#' Compute Global Y-axis Limits for Slice Plots
+#'
+#' @keywords internal
+compute_slice_ylim <- function(coefs, se, taus, taus_slice, slice_dim = c("u", "v")) {
+  slice_dim <- match.arg(slice_dim)
+
+  all_y_values <- numeric(0)
+
+  for (k in seq_along(taus_slice)) {
+    slice_val <- taus_slice[k]
+    slice_idx <- which(abs(taus - slice_val) < 1e-6)
+
+    if (length(slice_idx) == 0) next
+
+    # Extract coefficient slice
+    if (slice_dim == "u") {
+      beta <- coefs[slice_idx, ]
+      se_vals <- if (!is.null(se)) se[slice_idx, ] else NULL
+    } else {
+      beta <- coefs[, slice_idx]
+      se_vals <- if (!is.null(se)) se[, slice_idx] else NULL
+    }
+
+    all_y_values <- c(all_y_values, beta)
+
+    # Include confidence bounds if available
+    if (!is.null(se_vals)) {
+      crit <- stats::qnorm(0.975)
+      all_y_values <- c(all_y_values, beta - se_vals * crit, beta + se_vals * crit)
+    }
+  }
+
+  # Compute range with 5% margin
+  y_range <- range(all_y_values, na.rm = TRUE)
+  y_margin <- 0.05 * diff(y_range)
+
+  c(y_range[1] - y_margin, y_range[2] + y_margin)
+}
+
+
 #' Internal: Slice Plot Fixing u
 #'
 #' @keywords internal
-plot_slices_u <- function(coefs, se, taus, taus_slice, coef_name, ncol, ylim, ...) {
+plot_slices_u <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_ylim, ylim, ...) {
 
   if (!requireNamespace("patchwork", quietly = TRUE)) {
     stop("Package 'patchwork' is required for slice plots. Please install it.")
@@ -167,8 +230,17 @@ plot_slices_u <- function(coefs, se, taus, taus_slice, coef_name, ncol, ylim, ..
          "Either change your taus grid in qq_fit() or specify taus_slice explicitly.")
   }
 
-  # Determine which panels show y-axis
-  show_y_idx <- seq(1, length(taus_slice), by = ncol)
+  # Compute global y-axis limits if shared_ylim is TRUE and ylim not provided
+  if (shared_ylim && is.null(ylim)) {
+    ylim <- compute_slice_ylim(coefs, se, taus, taus_slice, slice_dim = "u")
+  }
+
+  # Determine which panels show y-axis (only hide if shared_ylim is TRUE)
+  if (shared_ylim) {
+    show_y_idx <- seq(1, length(taus_slice), by = ncol)
+  } else {
+    show_y_idx <- seq_along(taus_slice)  # Show all y-axes
+  }
 
   myColors <- c("#11333a", "#0faeb6", "#fda535", "#be3821")
 
@@ -229,7 +301,7 @@ plot_slices_u <- function(coefs, se, taus, taus_slice, coef_name, ncol, ylim, ..
 #' Internal: Slice Plot Fixing v
 #'
 #' @keywords internal
-plot_slices_v <- function(coefs, se, taus, taus_slice, coef_name, ncol, ylim, ...) {
+plot_slices_v <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_ylim, ylim, ...) {
 
   if (!requireNamespace("patchwork", quietly = TRUE)) {
     stop("Package 'patchwork' is required for slice plots. Please install it.")
@@ -244,7 +316,18 @@ plot_slices_v <- function(coefs, se, taus, taus_slice, coef_name, ncol, ylim, ..
          "Either change your taus grid in qq_fit() or specify taus_slice explicitly.")
   }
 
-  show_y_idx <- seq(1, length(taus_slice), by = ncol)
+  # Compute global y-axis limits if shared_ylim is TRUE and ylim not provided
+  if (shared_ylim && is.null(ylim)) {
+    ylim <- compute_slice_ylim(coefs, se, taus, taus_slice, slice_dim = "v")
+  }
+
+  # Determine which panels show y-axis (only hide if shared_ylim is TRUE)
+  if (shared_ylim) {
+    show_y_idx <- seq(1, length(taus_slice), by = ncol)
+  } else {
+    show_y_idx <- seq_along(taus_slice)  # Show all y-axes
+  }
+
   myColors <- c("#11333a", "#0faeb6", "#fda535", "#be3821")
 
   plots <- list()

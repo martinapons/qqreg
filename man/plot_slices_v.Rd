@@ -4,7 +4,17 @@
 \alias{plot_slices_v}
 \title{Internal: Slice Plot Fixing v}
 \usage{
-plot_slices_v(coefs, se, taus, taus_slice, coef_name, ncol, ylim, ...)
+plot_slices_v(
+  coefs,
+  se,
+  taus,
+  taus_slice,
+  coef_name,
+  ncol,
+  shared_ylim,
+  ylim,
+  ...
+)
 }
 \description{
 Internal: Slice Plot Fixing v
