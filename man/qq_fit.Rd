@@ -2,7 +2,7 @@
 % Please edit documentation in R/qq_fit.R
 \name{qq_fit}
 \alias{qq_fit}
-\title{Fit a Quantile-on-Quantiles Regression Model}
+\title{Fit a Quantile on Quantiles Regression Model}
 \usage{
 qq_fit(
   formula,
@@ -86,11 +86,11 @@ sample quantiles within each group, and the data is collapsed to the
 group level with weights equal to group sizes.
 }
 \examples{
-\dontrun{
+\donttest{
 # Simulated data with heterogeneous effects
 set.seed(123)
 n_groups <- 50
-n_per_group <- 20
+n_per_group <- 50
 n <- n_groups * n_per_group
 
 # Covariates
@@ -101,14 +101,8 @@ x2 <- rep(rnorm(n_groups), each = n_per_group)
 eta <- rep(rnorm(n_groups), each = n_per_group)
 nu <- rnorm(n)
 
-# Heterogeneity parameters
-psi1 <- 0.1
-psi2 <- 0.1
-phi1 <- 0.1
-phi2 <- 0.1
-
-# DGP: y = 1 + x1 + x2 + eta*(1 - psi1*x1 - psi2*x2) + nu*(1 + phi1*x1 + phi2*x2)
-y <- 1 + x1 + x2 + eta * (1 - psi1*x1 - psi2*x2) + nu * (1 + phi1*x1 + phi2*x2)
+# DGP: y = 1 + x1 + x2 + eta*(1 - 0.1*x1 - 0.1*x2) + nu*(1 + 0.1*x1 + 0.1*x2)
+y <- 1 + x1 + x2 + eta * (1 - 0.1*x1 - 0.1*x2) + nu * (1 + 0.1*x1 + 0.1*x2)
 
 data <- data.frame(
   group = rep(1:n_groups, each = n_per_group),
@@ -119,12 +113,13 @@ data <- data.frame(
 
 # Fit model
 fit <- qq_fit(y ~ x1 + x2, data = data, group = "group",
-              taus = seq(0.1, 0.9, 0.1))
+              taus = seq(0.1, 0.9, 0.1), nboot = 200)
 
 # View results
 summary(fit)
 plot(fit, which = "x1", type = "surface")
 plot(fit, which = "x1", type = "slice_u")
+plot(fit, which = "x1", type = "slice_u", taus_slice = c(0.2, 0.8))
 }
 
 }

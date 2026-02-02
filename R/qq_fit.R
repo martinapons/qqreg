@@ -1,4 +1,4 @@
-#' Fit a Quantile-on-Quantiles Regression Model
+#' Fit a Quantile on Quantiles Regression Model
 #'
 #' Estimates a two-dimensional quantile surface capturing heterogeneity
 #' both within and between groups using the two-step quantile regression
@@ -72,14 +72,8 @@
 #' eta <- rep(rnorm(n_groups), each = n_per_group)
 #' nu <- rnorm(n)
 #'
-#' # Heterogeneity parameters
-#' psi1 <- 0.1
-#' psi2 <- 0.1
-#' phi1 <- 0.1
-#' phi2 <- 0.1
-#'
-#' # DGP: y = 1 + x1 + x2 + eta*(1 - psi1*x1 - psi2*x2) + nu*(1 + phi1*x1 + phi2*x2)
-#' y <- 1 + x1 + x2 + eta * (1 - psi1*x1 - psi2*x2) + nu * (1 + phi1*x1 + phi2*x2)
+#' # DGP: y = 1 + x1 + x2 + eta*(1 - 0.1*x1 - 0.1*x2) + nu*(1 + 0.1*x1 + 0.1*x2)
+#' y <- 1 + x1 + x2 + eta * (1 - 0.1*x1 - 0.1*x2) + nu * (1 + 0.1*x1 + 0.1*x2)
 #'
 #' data <- data.frame(
 #'   group = rep(1:n_groups, each = n_per_group),

@@ -8,7 +8,7 @@
   x,
   which = NULL,
   type = c("surface", "slice_u", "slice_v"),
-  taus_slice = seq(0.2, 0.8, 0.1),
+  taus_slice = seq(0.1, 0.9, 0.1),
   ncol = 3,
   ylim = NULL,
   ...
@@ -29,7 +29,8 @@ first non-intercept coefficient.}
 }}
 
 \item{taus_slice}{Numeric vector, quantiles to use for slice plots.
-Default is \code{seq(0.2, 0.8, 0.1)}.}
+Default is \code{seq(0.1, 0.9, 0.1)}. Must be a subset of the model's
+quantile grid.}
 
 \item{ncol}{Integer, number of columns for slice plot panels (default 3).}
 

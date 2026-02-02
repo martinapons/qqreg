@@ -29,6 +29,6 @@ within and between groups.
 }
 
 \author{
-\strong{Maintainer}: Martina Pons \email{martina.pons@example.com}
+\strong{Maintainer}: Martina Pons \email{martina.pons@econ.uzh.ch}
 
 }
