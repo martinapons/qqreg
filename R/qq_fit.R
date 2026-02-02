@@ -57,7 +57,7 @@
 #' group level with weights equal to group sizes.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Simulated data with heterogeneous effects
 #' set.seed(123)
 #' n_groups <- 50
@@ -90,7 +90,7 @@
 #'
 #' # Fit model
 #' fit <- qq_fit(y ~ x1 + x2, data = data, group = "group",
-#'               taus = seq(0.1, 0.9, 0.1), nboot = 500)
+#'               taus = seq(0.1, 0.9, 0.1), nboot = 200)
 #'
 #' # View results
 #' summary(fit)
