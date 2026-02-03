@@ -23,6 +23,21 @@
 #'   all slices and only the first column displays y-axis labels. If FALSE,
 #'   each slice has its own y-axis scale and all y-axis labels are displayed.
 #' @param ylim Numeric vector of length 2, y-axis limits for slice plots.
+#' @param ylab Character, y-axis label. Default NULL uses \code{"Point Estimate"}
+#'   for slice plots and \code{expression(u)} for surface plots.
+#' @param xlab Character, x-axis label. Default NULL uses \code{expression(v)}
+#'   for \code{slice_u} and surface, \code{expression(u)} for \code{slice_v}.
+#' @param ggtitle Character, overall figure title. Default NULL uses the
+#'   coefficient name.
+#' @param panel_prefix Character, prefix for per-panel titles in slice plots.
+#'   Title is built as \code{paste0(panel_prefix, value)}. Default NULL uses
+#'   \code{"u = "} for \code{slice_u} and \code{"v = "} for \code{slice_v}.
+#'   Set to \code{""} to suppress the prefix and show only the value.
+#' @param line_color Character, colour for the line and points (default \code{"#11333a"}).
+#' @param ribbon_fill Character, fill colour for the confidence ribbon (default \code{"#0faeb6"}).
+#' @param point_color Character, colour for the points. Default NULL uses the
+#'   same colour as \code{line_color}.
+#' @param ribbon_alpha Numeric, transparency of the confidence ribbon (default 0.2).
 #' @param ... Additional arguments passed to underlying plot functions.
 #'
 #' @return A ggplot object (or list of ggplot objects if \code{which = "ALL"}).
@@ -49,7 +64,10 @@
 #' @export
 plot.qqfit <- function(x, which = NULL, type = c("surface", "slice_u", "slice_v"),
                         taus_slice = seq(0.1, 0.9, 0.1), ncol = NULL,
-                        shared_ylim = FALSE, ylim = NULL, ...) {
+                        shared_ylim = FALSE, ylim = NULL,
+                        ylab = NULL, xlab = NULL, ggtitle = NULL, panel_prefix = NULL,
+                        line_color = "#11333a", ribbon_fill = "#0faeb6",
+                        point_color = NULL, ribbon_alpha = 0.2, ...) {
 
   # Check for ggplot2
 
@@ -96,7 +114,10 @@ if (!requireNamespace("ggplot2", quietly = TRUE)) {
   if (identical(which, "ALL")) {
     plots <- lapply(coef_names, function(w) {
       plot_single(x, which = w, type = type, taus_slice = taus_slice,
-                  ncol = ncol, shared_ylim = shared_ylim, ylim = ylim, ...)
+                  ncol = ncol, shared_ylim = shared_ylim, ylim = ylim,
+                  ylab = ylab, xlab = xlab, ggtitle = ggtitle, panel_prefix = panel_prefix,
+                  line_color = line_color, ribbon_fill = ribbon_fill,
+                  point_color = point_color, ribbon_alpha = ribbon_alpha, ...)
     })
     names(plots) <- coef_names
     return(plots)
@@ -109,14 +130,19 @@ if (!requireNamespace("ggplot2", quietly = TRUE)) {
   }
 
   plot_single(x, which = which, type = type, taus_slice = taus_slice,
-              ncol = ncol, shared_ylim = shared_ylim, ylim = ylim, ...)
+              ncol = ncol, shared_ylim = shared_ylim, ylim = ylim,
+              ylab = ylab, xlab = xlab, ggtitle = ggtitle, panel_prefix = panel_prefix,
+              line_color = line_color, ribbon_fill = ribbon_fill,
+              point_color = point_color, ribbon_alpha = ribbon_alpha, ...)
 }
 
 
 #' Internal: Plot Single Coefficient
 #'
 #' @keywords internal
-plot_single <- function(x, which, type, taus_slice, ncol, shared_ylim, ylim, ...) {
+plot_single <- function(x, which, type, taus_slice, ncol, shared_ylim, ylim,
+                        ylab, xlab, ggtitle, panel_prefix,
+                        line_color, ribbon_fill, point_color, ribbon_alpha, ...) {
 
   # Extract coefficient matrix and SE matrix for this variable
   coef_idx <- which(dimnames(x$coef)[[1]] == which)
@@ -125,9 +151,16 @@ plot_single <- function(x, which, type, taus_slice, ncol, shared_ylim, ylim, ...
   taus <- x$taus
 
   switch(type,
-    "surface" = plot_surface(coefs, se, taus, which, ...),
-    "slice_u" = plot_slices_u(coefs, se, taus, taus_slice, which, ncol, shared_ylim, ylim, ...),
-    "slice_v" = plot_slices_v(coefs, se, taus, taus_slice, which, ncol, shared_ylim, ylim, ...)
+    "surface" = plot_surface(coefs, se, taus, which,
+                             ggtitle = ggtitle, xlab = xlab, ylab = ylab, ...),
+    "slice_u" = plot_slices_u(coefs, se, taus, taus_slice, which, ncol, shared_ylim, ylim,
+                              ylab = ylab, xlab = xlab, ggtitle = ggtitle, panel_prefix = panel_prefix,
+                              line_color = line_color, ribbon_fill = ribbon_fill,
+                              point_color = point_color, ribbon_alpha = ribbon_alpha, ...),
+    "slice_v" = plot_slices_v(coefs, se, taus, taus_slice, which, ncol, shared_ylim, ylim,
+                              ylab = ylab, xlab = xlab, ggtitle = ggtitle, panel_prefix = panel_prefix,
+                              line_color = line_color, ribbon_fill = ribbon_fill,
+                              point_color = point_color, ribbon_alpha = ribbon_alpha, ...)
   )
 }
 
@@ -135,7 +168,7 @@ plot_single <- function(x, which, type, taus_slice, ncol, shared_ylim, ylim, ...
 #' Internal: Surface Plot
 #'
 #' @keywords internal
-plot_surface <- function(coefs, se, taus, coef_name, ...) {
+plot_surface <- function(coefs, se, taus, coef_name, ggtitle = NULL, xlab = NULL, ylab = NULL, ...) {
 
   # Create tidy data for plotting
   tau1 <- rep(taus, times = length(taus))
@@ -156,16 +189,23 @@ plot_surface <- function(coefs, se, taus, coef_name, ...) {
                                binwidth = (max(coefs) - min(coefs)) / 30) +
       ggplot2::scale_fill_gradientn(name = "Effect", colours = myColors)
   } else {
+    message("Package 'metR' is not installed. Using geom_tile for the surface plot. ",
+            "Install metR for filled contour plots: install.packages(\"metR\")")
     p <- ggplot2::ggplot(tidy_mat, ggplot2::aes(x = .data$v, y = .data$u)) +
       ggplot2::geom_tile(ggplot2::aes(fill = .data$effect)) +
       ggplot2::scale_fill_gradientn(name = "Effect", colours = myColors)
   }
 
+  # Resolve label defaults
+  if (is.null(ylab)) ylab <- expression(u)
+  if (is.null(xlab)) xlab <- expression(v)
+  if (is.null(ggtitle)) ggtitle <- coef_name
+
   p <- p +
     ggplot2::guides(fill = ggplot2::guide_colourbar(barwidth = 0.5, barheight = 15)) +
-    ggplot2::ylab(expression(u)) +
-    ggplot2::xlab(expression(v)) +
-    ggplot2::ggtitle(coef_name) +
+    ggplot2::ylab(ylab) +
+    ggplot2::xlab(xlab) +
+    ggplot2::ggtitle(ggtitle) +
     ggplot2::theme_minimal()
 
   return(p)
@@ -215,7 +255,10 @@ compute_slice_ylim <- function(coefs, se, taus, taus_slice, slice_dim = c("u", "
 #' Internal: Slice Plot Fixing u
 #'
 #' @keywords internal
-plot_slices_u <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_ylim, ylim, ...) {
+plot_slices_u <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_ylim, ylim,
+                          ylab = NULL, xlab = NULL, ggtitle = NULL, panel_prefix = NULL,
+                          line_color = "#11333a", ribbon_fill = "#0faeb6",
+                          point_color = NULL, ribbon_alpha = 0.2, ...) {
 
   if (!requireNamespace("patchwork", quietly = TRUE)) {
     stop("Package 'patchwork' is required for slice plots. Please install it.")
@@ -230,6 +273,13 @@ plot_slices_u <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_y
          "Either change your taus grid in qq_fit() or specify taus_slice explicitly.")
   }
 
+  # Resolve NULL defaults
+  if (is.null(panel_prefix)) panel_prefix <- "u = "
+  if (is.null(point_color))  point_color  <- line_color
+  if (is.null(ylab))         ylab         <- "Point Estimate"
+  if (is.null(xlab))         xlab         <- expression(v)
+  if (is.null(ggtitle))      ggtitle      <- coef_name
+
   # Compute global y-axis limits if shared_ylim is TRUE and ylim not provided
   if (shared_ylim && is.null(ylim)) {
     ylim <- compute_slice_ylim(coefs, se, taus, taus_slice, slice_dim = "u")
@@ -241,8 +291,6 @@ plot_slices_u <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_y
   } else {
     show_y_idx <- seq_along(taus_slice)  # Show all y-axes
   }
-
-  myColors <- c("#11333a", "#0faeb6", "#fda535", "#be3821")
 
   plots <- list()
   for (k in seq_along(taus_slice)) {
@@ -261,24 +309,24 @@ plot_slices_u <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_y
 
     dd <- data.frame(v = taus, beta = beta, se = se_vals, lb = lb, ub = ub)
 
-    title <- bquote(paste(u, " = ", .(u_val)))
+    title <- paste0(panel_prefix, u_val)
 
     p <- ggplot2::ggplot(data = dd) +
       ggplot2::theme_minimal() +
       ggplot2::aes(x = .data$v, y = .data$beta) +
-      ggplot2::geom_line(linewidth = 0.5, color = myColors[1]) +
-      ggplot2::geom_point(color = myColors[1], size = 1) +
-      ggplot2::labs(title = title, x = expression(v)) +
+      ggplot2::geom_line(linewidth = 0.5, color = line_color) +
+      ggplot2::geom_point(color = point_color, size = 1) +
+      ggplot2::labs(title = title, x = xlab) +
       ggplot2::coord_cartesian(ylim = ylim)
 
     if (!all(is.na(se_vals))) {
       p <- p + ggplot2::geom_ribbon(ggplot2::aes(ymin = .data$lb, ymax = .data$ub),
-                                     alpha = 0.2, fill = myColors[2])
+                                     alpha = ribbon_alpha, fill = ribbon_fill)
     }
 
     # Only show y-axis label on first column
     if (k %in% show_y_idx) {
-      p <- p + ggplot2::ylab("Point Estimate")
+      p <- p + ggplot2::ylab(ylab)
     } else {
       p <- p + ggplot2::theme(
         axis.title.y = ggplot2::element_blank(),
@@ -292,7 +340,7 @@ plot_slices_u <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_y
 
   # Combine with patchwork
   combined <- patchwork::wrap_plots(plots, ncol = ncol) +
-    patchwork::plot_annotation(title = coef_name)
+    patchwork::plot_annotation(title = ggtitle)
 
   return(combined)
 }
@@ -301,7 +349,10 @@ plot_slices_u <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_y
 #' Internal: Slice Plot Fixing v
 #'
 #' @keywords internal
-plot_slices_v <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_ylim, ylim, ...) {
+plot_slices_v <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_ylim, ylim,
+                          ylab = NULL, xlab = NULL, ggtitle = NULL, panel_prefix = NULL,
+                          line_color = "#11333a", ribbon_fill = "#0faeb6",
+                          point_color = NULL, ribbon_alpha = 0.2, ...) {
 
   if (!requireNamespace("patchwork", quietly = TRUE)) {
     stop("Package 'patchwork' is required for slice plots. Please install it.")
@@ -316,6 +367,13 @@ plot_slices_v <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_y
          "Either change your taus grid in qq_fit() or specify taus_slice explicitly.")
   }
 
+  # Resolve NULL defaults
+  if (is.null(panel_prefix)) panel_prefix <- "v = "
+  if (is.null(point_color))  point_color  <- line_color
+  if (is.null(ylab))         ylab         <- "Point Estimate"
+  if (is.null(xlab))         xlab         <- expression(u)
+  if (is.null(ggtitle))      ggtitle      <- coef_name
+
   # Compute global y-axis limits if shared_ylim is TRUE and ylim not provided
   if (shared_ylim && is.null(ylim)) {
     ylim <- compute_slice_ylim(coefs, se, taus, taus_slice, slice_dim = "v")
@@ -327,8 +385,6 @@ plot_slices_v <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_y
   } else {
     show_y_idx <- seq_along(taus_slice)  # Show all y-axes
   }
-
-  myColors <- c("#11333a", "#0faeb6", "#fda535", "#be3821")
 
   plots <- list()
   for (k in seq_along(taus_slice)) {
@@ -346,23 +402,23 @@ plot_slices_v <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_y
 
     dd <- data.frame(u = taus, beta = beta, se = se_vals, lb = lb, ub = ub)
 
-    title <- bquote(paste(v, " = ", .(v_val)))
+    title <- paste0(panel_prefix, v_val)
 
     p <- ggplot2::ggplot(data = dd) +
       ggplot2::theme_minimal() +
       ggplot2::aes(x = .data$u, y = .data$beta) +
-      ggplot2::geom_line(linewidth = 0.5, color = myColors[1]) +
-      ggplot2::geom_point(color = myColors[1], size = 1) +
-      ggplot2::labs(title = title, x = expression(u)) +
+      ggplot2::geom_line(linewidth = 0.5, color = line_color) +
+      ggplot2::geom_point(color = point_color, size = 1) +
+      ggplot2::labs(title = title, x = xlab) +
       ggplot2::coord_cartesian(ylim = ylim)
 
     if (!all(is.na(se_vals))) {
       p <- p + ggplot2::geom_ribbon(ggplot2::aes(ymin = .data$lb, ymax = .data$ub),
-                                     alpha = 0.2, fill = myColors[2])
+                                     alpha = ribbon_alpha, fill = ribbon_fill)
     }
 
     if (k %in% show_y_idx) {
-      p <- p + ggplot2::ylab("Point Estimate")
+      p <- p + ggplot2::ylab(ylab)
     } else {
       p <- p + ggplot2::theme(
         axis.title.y = ggplot2::element_blank(),
@@ -375,7 +431,7 @@ plot_slices_v <- function(coefs, se, taus, taus_slice, coef_name, ncol, shared_y
   }
 
   combined <- patchwork::wrap_plots(plots, ncol = ncol) +
-    patchwork::plot_annotation(title = coef_name)
+    patchwork::plot_annotation(title = ggtitle)
 
   return(combined)
 }

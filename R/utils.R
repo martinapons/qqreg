@@ -4,7 +4,7 @@
 #' @importFrom quantreg rq
 NULL
 
-#' qqreg: Quantile-on-Quantiles Regression
+#' qqreg: Quantile on Quantiles Regression
 #'
 #' Implements the two-step quantile regression estimator from
 #' Pons (2026) "Quantile on Quantiles". The package estimates a

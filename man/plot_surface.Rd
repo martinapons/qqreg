@@ -4,7 +4,16 @@
 \alias{plot_surface}
 \title{Internal: Surface Plot}
 \usage{
-plot_surface(coefs, se, taus, coef_name, ...)
+plot_surface(
+  coefs,
+  se,
+  taus,
+  coef_name,
+  ggtitle = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  ...
+)
 }
 \description{
 Internal: Surface Plot

@@ -7,7 +7,7 @@
 #'
 #' @export
 print.qqfit <- function(x, ...) {
-  cat("\nQuantile-on-Quantiles Regression\n")
+  cat("\nQuantile on Quantiles Regression\n")
   cat("================================\n\n")
 
   cat("Call:\n")
@@ -77,7 +77,7 @@ summary.qqfit <- function(object, which = NULL, taus_u = NULL, taus_v = NULL, ..
   u_idx <- which(object$taus %in% taus_u)
   v_idx <- which(object$taus %in% taus_v)
 
-  cat("\nQuantile-on-Quantiles Regression Summary\n")
+  cat("\nQuantile on Quantiles Regression Summary\n")
   cat("========================================\n\n")
 
   cat("Call:\n")

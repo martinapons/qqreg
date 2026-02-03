@@ -4,7 +4,24 @@
 \alias{plot_single}
 \title{Internal: Plot Single Coefficient}
 \usage{
-plot_single(x, which, type, taus_slice, ncol, shared_ylim, ylim, ...)
+plot_single(
+  x,
+  which,
+  type,
+  taus_slice,
+  ncol,
+  shared_ylim,
+  ylim,
+  ylab,
+  xlab,
+  ggtitle,
+  panel_prefix,
+  line_color,
+  ribbon_fill,
+  point_color,
+  ribbon_alpha,
+  ...
+)
 }
 \description{
 Internal: Plot Single Coefficient

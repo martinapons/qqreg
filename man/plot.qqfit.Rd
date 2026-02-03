@@ -12,6 +12,14 @@
   ncol = NULL,
   shared_ylim = FALSE,
   ylim = NULL,
+  ylab = NULL,
+  xlab = NULL,
+  ggtitle = NULL,
+  panel_prefix = NULL,
+  line_color = "#11333a",
+  ribbon_fill = "#0faeb6",
+  point_color = NULL,
+  ribbon_alpha = 0.2,
   ...
 )
 }
@@ -43,6 +51,29 @@ all slices and only the first column displays y-axis labels. If FALSE,
 each slice has its own y-axis scale and all y-axis labels are displayed.}
 
 \item{ylim}{Numeric vector of length 2, y-axis limits for slice plots.}
+
+\item{ylab}{Character, y-axis label. Default NULL uses \code{"Point Estimate"}
+for slice plots and \code{expression(u)} for surface plots.}
+
+\item{xlab}{Character, x-axis label. Default NULL uses \code{expression(v)}
+for \code{slice_u} and surface, \code{expression(u)} for \code{slice_v}.}
+
+\item{ggtitle}{Character, overall figure title. Default NULL uses the
+coefficient name.}
+
+\item{panel_prefix}{Character, prefix for per-panel titles in slice plots.
+Title is built as \code{paste0(panel_prefix, value)}. Default NULL uses
+\code{"u = "} for \code{slice_u} and \code{"v = "} for \code{slice_v}.
+Set to \code{""} to suppress the prefix and show only the value.}
+
+\item{line_color}{Character, colour for the line and points (default \code{"#11333a"}).}
+
+\item{ribbon_fill}{Character, fill colour for the confidence ribbon (default \code{"#0faeb6"}).}
+
+\item{point_color}{Character, colour for the points. Default NULL uses the
+same colour as \code{line_color}.}
+
+\item{ribbon_alpha}{Numeric, transparency of the confidence ribbon (default 0.2).}
 
 \item{...}{Additional arguments passed to underlying plot functions.}
 }

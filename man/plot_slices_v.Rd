@@ -13,6 +13,14 @@ plot_slices_v(
   ncol,
   shared_ylim,
   ylim,
+  ylab = NULL,
+  xlab = NULL,
+  ggtitle = NULL,
+  panel_prefix = NULL,
+  line_color = "#11333a",
+  ribbon_fill = "#0faeb6",
+  point_color = NULL,
+  ribbon_alpha = 0.2,
   ...
 )
 }

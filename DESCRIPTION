@@ -9,6 +9,9 @@ Description: Implements the two-step quantile regression estimator from
     quantile surface capturing heterogeneity both within and between groups.
     It performs automatic variable classification (within-group vs between-group),
     handles mixed variables, and provides clustered bootstrap inference.
+    Plotting requires ggplot2 and patchwork; the optional package metR provides
+    filled contour surface plots (geom_tile is used as fallback when metR is
+    not installed).
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
