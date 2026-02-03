@@ -172,6 +172,7 @@ plot(fit2, which = "x1", type = "surface", ggtitle = "Coefficient on X1",
 
 Plot Slices of u
 ```r
+# Plot slices with default settings. Get 1 graph for each value of u (within rank). 
 plot(fit2, which = "x1", type = "slice_u")
 ```
 <img width="987" height="609" alt="image" src="https://github.com/user-attachments/assets/ce9f50ea-7191-4dca-939d-e6dc4828cbcf" />
@@ -188,3 +189,6 @@ plot(fit2, which = "x1", type = "slice_u",
 ```r
 
 ```
+
+# References
+Pons M. (2026). Quantiles on Quantles [Link to the paper](https://martinapons.github.io/files/QQmodel.pdf)
