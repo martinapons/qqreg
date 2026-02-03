@@ -95,6 +95,14 @@
 #' plot(fit, which = "x1", type = "surface")
 #' plot(fit, which = "x1", type = "slice_u")
 #' plot(fit, which = "x1", type = "slice_u", taus_slice = c(0.2, 0.8))
+#'
+#' # Intercept-only model (no covariates)
+#' fit_intercept <- qq_fit(y ~ 1, data = data, group = "group",
+#'                         taus = seq(0.1, 0.9, 0.1), nboot = 200)
+#'
+#' summary(fit_intercept)
+#' plot(fit_intercept, which = "(Intercept)", type = "surface")
+#' plot(fit_intercept, which = "(Intercept)", type = "slice_u")
 #' }
 #'
 #' @export
