@@ -39,7 +39,7 @@
 #'
 #' @details
 #' The model estimates:
-#' \deqn{Q(v, Q(u, y_{ij} | x_{1,ij}, x_{2,j}) | x_{1,ij}, x_{2,j}) = x_1'\beta(u,v) + x_2'\gamma(u,v) + \alpha(u,v)}
+#' \deqn{Q(v, Q(u, y_{ij} | x_{1ij}, x_{2j}) | x_{1ij}, x_{2j}) = x_{1ij}'\beta(u,v) + x_{2j}'\gamma(u,v) + \alpha(u,v)}
 #'
 #' where:
 #' \itemize{
